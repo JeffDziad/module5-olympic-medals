@@ -7,6 +7,7 @@ import Badge from 'react-bootstrap/Badge';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import './App.css';
+import NotifContainer from "./components/Notif/NotifContainer";
 
 class App extends Component {
     state = {
@@ -19,18 +20,26 @@ class App extends Component {
             { id: 1, name: 'gold' },
             { id: 2, name: 'silver' },
             { id: 3, name: 'bronze' },
-        ]
+        ],
+        notifications: [],
+    }
+
+    createNotification = (title, message) => {
+        this.setState({notifications: [...this.state.notifications, {title: title, message: message}]});
     }
     handleAdd = (name) => {
         const { countries } = this.state;
         const id = countries.length === 0 ? 1 : Math.max(...countries.map(country => country.id)) + 1;
         const mutableCountries = [...countries].concat({ id: id, name: name, gold: 0, silver: 0, bronze: 0 });
         this.setState({ countries: mutableCountries });
+        this.createNotification("Added Country", `${name} was added successfully!`);
     }
     handleDelete = (countryId) => {
         const { countries } = this.state;
         const mutableCountries = [...countries].filter(c => c.id !== countryId);
         this.setState({ countries: mutableCountries });
+        this.createNotification("Removed Country", `Successfully removed a country!`);
+
     }
     handleIncrement = (countryId, medalName) => {
         const countries = [ ...this.state.countries ];
@@ -52,6 +61,7 @@ class App extends Component {
     render() {
         return (
             <React.Fragment>
+                <NotifContainer notifications={this.state.notifications}/>
                 <Navbar className="navbar-dark bg-dark">
                     <Container fluid>
                         <Navbar.Brand>
