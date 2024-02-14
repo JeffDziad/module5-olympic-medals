@@ -68,10 +68,11 @@ function App() {
                 </Container>
             </Navbar>
             <Container fluid>
-                <Row>
+                <Row className="justify-content-around">
                     { countries.map(country =>
-                        <Col className="mt-3" key={ country.id }>
+                        <Col xs={12} md={4} key={ country.id } className="p-3 d-flex align-items-center justify-content-center">
                             <Country
+                                className="content"
                                 country={ country }
                                 medals={ medals }
                                 onDelete={ handleDelete }
