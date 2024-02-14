@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {useState} from 'react';
 import Country from './components/Country';
 import NewCountry from './components/NewCountry';
 import Container from 'react-bootstrap/Container';
@@ -9,85 +9,80 @@ import Col from 'react-bootstrap/Col';
 import './App.css';
 import NotifContainer from "./components/Notif/NotifContainer";
 
-class App extends Component {
-    state = {
-        countries: [
-            { id: 1, name: 'United States', gold: 2, silver: 2, bronze: 3 },
-            { id: 2, name: 'China', gold: 3, silver: 1, bronze: 0 },
-            { id: 3, name: 'Germany', gold: 0, silver: 2, bronze: 2 },
-        ],
-        medals: [
-            { id: 1, name: 'gold' },
-            { id: 2, name: 'silver' },
-            { id: 3, name: 'bronze' },
-        ],
-        notifications: [],
-    }
+function App() {
+    const [countries, setCountries] = useState([
+        { id: 1, name: 'United States', gold: 2, silver: 2, bronze: 3 },
+        { id: 2, name: 'China', gold: 3, silver: 1, bronze: 0 },
+        { id: 3, name: 'Germany', gold: 0, silver: 2, bronze: 2 },
+    ]);
+    const [medals] = useState([
+        { id: 1, name: 'gold' },
+        { id: 2, name: 'silver' },
+        { id: 3, name: 'bronze' },
+    ]);
 
-    createNotification = (title, message) => {
-        this.setState({notifications: [...this.state.notifications, {title: title, message: message}]});
+    const [notifications, setNotifications] = useState([]);
+
+    const createNotification = (title, message) => {
+        setNotifications(prevState => [...prevState, {title: title, message: message}])
     }
-    handleAdd = (name) => {
-        const { countries } = this.state;
+    const handleAdd = (name) => {
         const id = countries.length === 0 ? 1 : Math.max(...countries.map(country => country.id)) + 1;
         const mutableCountries = [...countries].concat({ id: id, name: name, gold: 0, silver: 0, bronze: 0 });
-        this.setState({ countries: mutableCountries });
-        this.createNotification("Added Country", `${name} was added successfully!`);
+        setCountries(mutableCountries)
+        createNotification("Added Country", `${name} was added successfully!`);
     }
-    handleDelete = (countryId) => {
-        const { countries } = this.state;
+    const handleDelete = (countryId) => {
         const mutableCountries = [...countries].filter(c => c.id !== countryId);
-        this.setState({ countries: mutableCountries });
-        this.createNotification("Removed Country", `Successfully removed a country!`);
+        setCountries(mutableCountries);
+        createNotification("Removed Country", `Successfully removed a country!`);
 
     }
-    handleIncrement = (countryId, medalName) => {
-        const countries = [ ...this.state.countries ];
-        const idx = countries.findIndex(c => c.id === countryId);
-        countries[idx][medalName] += 1;
-        this.setState({ countries: countries });
+    const handleIncrement = (countryId, medalName) => {
+        let cArr = [...countries];
+        const cid = cArr.findIndex(c => c.id === countryId);
+        cArr[cid][medalName] += 1;
+        setCountries(cArr);
     }
-    handleDecrement = (countryId, medalName) => {
-        const countries = [ ...this.state.countries ];
-        const idx = countries.findIndex(c => c.id === countryId);
-        countries[idx][medalName] -= 1;
-        this.setState({ countries: countries });
+    const handleDecrement = (countryId, medalName) => {
+        let cArr = [...countries];
+        const cid = cArr.findIndex(c => c.id === countryId);
+        cArr[cid][medalName] -= 1;
+        setCountries(cArr);
     }
-    getAllMedalsTotal() {
+    const getAllMedalsTotal = () => {
         let sum = 0;
-        this.state.medals.forEach(medal => { sum += this.state.countries.reduce((a, b) => a + b[medal.name], 0); });
+        medals.forEach(medal => { sum += countries.reduce((a, b) => a + b[medal.name], 0); });
         return sum;
     }
-    render() {
-        return (
-            <React.Fragment>
-                <NotifContainer notifications={this.state.notifications}/>
-                <Navbar className="navbar-dark bg-dark">
-                    <Container fluid>
-                        <Navbar.Brand>
-                            Olympic Medals
-                            <Badge className="ml-2" bg="light" text="dark" pill>{ this.getAllMedalsTotal() }</Badge>
-                        </Navbar.Brand>
-                        <NewCountry onAdd={ this.handleAdd } />
-                    </Container>
-                </Navbar>
+    return (
+        <React.Fragment>
+            <NotifContainer notifications={notifications}/>
+            <Navbar className="navbar-dark bg-dark">
                 <Container fluid>
-                    <Row>
-                        { this.state.countries.map(country =>
-                            <Col className="mt-3" key={ country.id }>
-                                <Country
-                                    country={ country }
-                                    medals={ this.state.medals }
-                                    onDelete={ this.handleDelete }
-                                    onIncrement={ this.handleIncrement }
-                                    onDecrement={ this.handleDecrement } />
-                            </Col>
-                        )}
-                    </Row>
+                    <Navbar.Brand>
+                        Olympic Medals
+                        <Badge className="ms-2" bg="light" text="dark" pill>{ getAllMedalsTotal() }</Badge>
+                    </Navbar.Brand>
+                    <NewCountry onAdd={ handleAdd } />
                 </Container>
-            </React.Fragment>
-        );
-    }
+            </Navbar>
+            <Container fluid>
+                <Row>
+                    { countries.map(country =>
+                        <Col className="mt-3" key={ country.id }>
+                            <Country
+                                country={ country }
+                                medals={ medals }
+                                onDelete={ handleDelete }
+                                onIncrement={ handleIncrement }
+                                onDecrement={ handleDecrement } />
+                        </Col>
+                    )}
+                </Row>
+            </Container>
+        </React.Fragment>
+    );
 }
 
 export default App;
