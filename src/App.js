@@ -8,8 +8,6 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import './App.css';
 import NotifContainer from "./components/Notif/NotifContainer";
-import {queries} from "@testing-library/react";
-import country from "./components/Country";
 
 function App() {
     const endpoint = "https://jeffdziad-olympic-medals-api.azurewebsites.net/api/country"
