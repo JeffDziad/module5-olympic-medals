@@ -8,6 +8,7 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import './App.css';
 import NotifContainer from "./components/Notif/NotifContainer";
+import axios from "axios";
 
 function App() {
     const endpoint = "https://jeffdziad-olympic-medals-api.azurewebsites.net/api/country"
@@ -24,77 +25,122 @@ function App() {
     const [notifId, setNotifId] = useState(0);
     const [notifications, setNotifications] = useState([]);
 
-    useEffect( () => {
-        async function grabCountries() {
-            const res = await fetch(endpoint);
-            const c = await res.json();
-            setCountries(c);
-        }
-        grabCountries();
-    }, []);
-
     const createNotification = (title, message) => {
         setNotifications(prevState => [...prevState, {id: notifId, title: title, message: message}])
         setNotifId(prevState => prevState+1);
     }
-    const handleAdd = async (name) => {
-        // const id = countries.length === 0 ? 1 : Math.max(...countries.map(country => country.id)) + 1;
-        // const mutableCountries = [...countries].concat({ id: id, name: name, gold: 0, silver: 0, bronze: 0 });
-        // setCountries(mutableCountries)
-        // createNotification("Added Country", `${name} was added successfully!`);
 
-        try {
-            const res = await fetch(endpoint, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({name: name})
+    // this is the functional equivalent to componentDidMount
+    useEffect(() => {
+        // initial data loaded here
+        async function fetchCountries() {
+            const { data : fetchedCountries } = await axios.get(endpoint);
+            // we need to save the original medal count values in state
+            let newCountries = [];
+            fetchedCountries.forEach(country => {
+                let newCountry = {
+                    id: country.id,
+                    name: country.name,
+                };
+                medals.current.forEach(medal => {
+                    const count = country[medal.name];
+                    // page_value is what is displayed on the web page
+                    // saved_value is what is saved to the database
+                    newCountry[medal.name] = { page_value: count, saved_value: count };
+                });
+                newCountries.push(newCountry);
             });
-            const successfulEntry = await res.json();
-            setCountries([...countries, successfulEntry]);
-            createNotification("Added Country", `Successfully added ${successfulEntry.name}!`);
-        } catch (error) {
-            createNotification("Action Failed", `Failed to add the country, ${name}. Please view the console for more details...`);
-            console.error(error);
+            setCountries(newCountries);
         }
+        fetchCountries();
+    }, []);
+
+    const handleAdd = async (name) => {
+        const { data: post } = await axios.post(endpoint, { name: name });
+        let newCountry = {
+            id: post.id,
+            name: post.name,
+        };
+        medals.current.forEach(medal => {
+            const count = post[medal.name];
+            // when a new country is added, we need to store page and saved values for
+            // medal counts in state
+            newCountry[medal.name] = { page_value: count, saved_value: count };
+        });
+        setCountries(countries.concat(newCountry));
+        console.log('ADD');
     }
     const handleDelete = async (countryId) => {
-        // const mutableCountries = [...countries].filter(c => c.id !== countryId);
-        // setCountries(mutableCountries);
-        // createNotification("Removed Country", `Successfully removed a country!`);
-
+        const originalCountries = countries;
+        setCountries(countries.filter(c => c.id !== countryId));
         try {
-            await fetch(`${endpoint}/${countryId}`, {
-                method: "DELETE"
-            }).then(() => {
-                setCountries([...countries.filter((c) => c.id !== countryId)]);
-                createNotification("Removed Country", `Successfully removed the selected country!`);
-            });
-        } catch (error) {
-            createNotification("Action Failed", `Failed to remove the country. Please view the console for more details...`);
-            console.error(error);
+            await axios.delete(`${endpoint}/${countryId}`);
+        } catch (ex) {
+            if (ex.response && ex.response.status === 404) {
+                // country already deleted
+                console.log("The record does not exist - it may have already been deleted");
+            } else {
+                alert('An error occurred while deleting');
+                setCountries(originalCountries);
+            }
         }
     }
-    const handleIncrement = (countryId, medalName) => {
-        // let cArr = [...countries];
-        // const cid = cArr.findIndex(c => c.id === countryId);
-        // cArr[cid][medalName] += 1;
-        // setCountries(cArr);
-        console.log("Not yet implemented...");
+
+    const handleSave = async (countryId) => {
+        const originalCountries = countries;
+
+        const idx = countries.findIndex(c => c.id === countryId);
+        const mutableCountries = [ ...countries ];
+        const country = mutableCountries[idx];
+        let jsonPatch = [];
+        medals.current.forEach(medal => {
+            if (country[medal.name].page_value !== country[medal.name].saved_value) {
+                jsonPatch.push({ op: "replace", path: medal.name, value: country[medal.name].page_value });
+                country[medal.name].saved_value = country[medal.name].page_value;
+            }
+        });
+        console.log(`json patch for id: ${countryId}: ${JSON.stringify(jsonPatch)}`);
+        // update state
+        setCountries(mutableCountries);
+
+        try {
+            await axios.patch(`${endpoint}/${countryId}`, jsonPatch);
+        } catch (ex) {
+            if (ex.response && ex.response.status === 404) {
+                // country already deleted
+                console.log("The record does not exist - it may have already been deleted");
+            } else {
+                alert('An error occurred while updating');
+                setCountries(originalCountries);
+            }
+        }
     }
-    const handleDecrement = (countryId, medalName) => {
-        // let cArr = [...countries];
-        // const cid = cArr.findIndex(c => c.id === countryId);
-        // cArr[cid][medalName] -= 1;
-        // setCountries(cArr);
-        console.log("Not yet implemented...");
+    const handleReset = (countryId) => {
+        // to reset, make page value the same as the saved value
+        const idx = countries.findIndex(c => c.id === countryId);
+        const mutableCountries = [ ...countries ];
+        const country = mutableCountries[idx];
+        medals.current.forEach(medal => {
+            country[medal.name].page_value = country[medal.name].saved_value;
+        });
+        setCountries(mutableCountries);
     }
+    const handleIncrement = (countryId, medalName) => handleUpdate(countryId, medalName, 1);
+    const handleDecrement = (countryId, medalName) => handleUpdate(countryId, medalName, -1);
+    const handleUpdate = (countryId, medalName, factor) => {
+        const idx = countries.findIndex(c => c.id === countryId);
+        const mutableCountries = [...countries ];
+        mutableCountries[idx][medalName].page_value += (1 * factor);
+        setCountries(mutableCountries);
+    }
+
     const getAllMedalsTotal = () => {
         let sum = 0;
-        medals.forEach(medal => { sum += countries.reduce((a, b) => a + b[medal.name], 0); });
+        // use medal count displayed in the web page for medal count totals
+        medals.current.forEach(medal => { sum += countries.reduce((a, b) => a + b[medal.name].page_value, 0); });
         return sum;
     }
+
     return (
         <React.Fragment>
             <NotifContainer notifications={notifications}/>
@@ -116,6 +162,8 @@ function App() {
                                 country={ country }
                                 medals={ medals }
                                 onDelete={ handleDelete }
+                                onSave={handleSave}
+                                onReset={handleReset}
                                 onIncrement={ handleIncrement }
                                 onDecrement={ handleDecrement } />
                         </Col>

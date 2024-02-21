@@ -6,14 +6,20 @@ function Medal(props) {
     return (
         <React.Fragment>
             <div style={{ textTransform: "capitalize"}}>
-                { props.medal.name } Medals
+                {
+                    ( props.country[props.medal.name].page_value !== props.country[props.medal.name].saved_value) ?
+                        <span className="delta">{props.medal.name} Medals: </span>
+                        :
+                        <span>{props.medal.name} Medals</span>
+                }
             </div>
             <div className="medal-count">
                 <DashSquare
-                    onClick={ () => props.country[props.medal.name] > 0 && props.onDecrement(props.country.id, props.medal.name) }
+                    onClick={ () => props.country[props.medal.name].page_value > 0 && props.onDecrement(props.country.id, props.medal.name) }
                     className="me-2 icon-btn" />
                 <Badge bg="primary" text="light">
-                    { props.country[props.medal.name] }
+                    {/* use medal count displayed in the web page for medal count totals */}
+                    { props.country[props.medal.name].page_value }
                 </Badge>
                 <PlusSquare
                     onClick={ () => props.onIncrement(props.country.id, props.medal.name) }

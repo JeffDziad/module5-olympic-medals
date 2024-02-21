@@ -1,0 +1,58 @@
+const handleAdd = async (name) => {
+        // const id = countries.length === 0 ? 1 : Math.max(...countries.map(country => country.id)) + 1;
+        // const mutableCountries = [...countries].concat({ id: id, name: name, gold: 0, silver: 0, bronze: 0 });
+        // setCountries(mutableCountries)
+        // createNotification("Added Country", `${name} was added successfully!`);
+
+        try {
+            const res = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({name: name})
+            });
+            const successfulEntry = await res.json();
+            setCountries([...countries, successfulEntry]);
+            createNotification("Added Country", `Successfully added ${successfulEntry.name}!`);
+        } catch (error) {
+            createNotification("Action Failed", `Failed to add the country, ${name}. Please view the console for more details...`);
+            console.error(error);
+        }
+    }
+    const handleDelete = async (countryId) => {
+        // const mutableCountries = [...countries].filter(c => c.id !== countryId);
+        // setCountries(mutableCountries);
+        // createNotification("Removed Country", `Successfully removed a country!`);
+
+        try {
+            await fetch(`${endpoint}/${countryId}`, {
+                method: "DELETE"
+            }).then(() => {
+                setCountries([...countries.filter((c) => c.id !== countryId)]);
+                createNotification("Removed Country", `Successfully removed the selected country!`);
+            });
+        } catch (error) {
+            createNotification("Action Failed", `Failed to remove the country. Please view the console for more details...`);
+            console.error(error);
+        }
+    }
+    const handleIncrement = (countryId, medalName) => {
+        // let cArr = [...countries];
+        // const cid = cArr.findIndex(c => c.id === countryId);
+        // cArr[cid][medalName] += 1;
+        // setCountries(cArr);
+        console.log("Not yet implemented...");
+    }
+    const handleDecrement = (countryId, medalName) => {
+        // let cArr = [...countries];
+        // const cid = cArr.findIndex(c => c.id === countryId);
+        // cArr[cid][medalName] -= 1;
+        // setCountries(cArr);
+        console.log("Not yet implemented...");
+    }
+    const getAllMedalsTotal = () => {
+        let sum = 0;
+        medals.forEach(medal => { sum += countries.reduce((a, b) => a + b[medal.name], 0); });
+        return sum;
+    }
