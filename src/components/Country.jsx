@@ -1,6 +1,6 @@
 import React from 'react';
 import Medal from './Medal';
-import { TrashFill } from 'react-bootstrap-icons';
+import { TrashFill, Save, ArrowCounterclockwise } from 'react-bootstrap-icons';
 import Card from 'react-bootstrap/Card';
 import Badge from 'react-bootstrap/Badge';
 import ListGroup from 'react-bootstrap/ListGroup';
@@ -31,13 +31,10 @@ function Country(props) {
           { getMedalsTotal(props.country, props.medals) }
         </Badge>
         </span>
-                    {/* this will render save/reset buttons if the page/saved medal counts are not equal
-          otherewise, the delete country button will be rendered */}
                     { renderSaveButton() ?
                         <React.Fragment>
-                            {/* TODO: use Bootstrap stying / icons */}
-                            <button onClick={ () => onSave(country.id) }>save</button>
-                            <button onClick={ () => onReset(country.id) }>reset</button>
+                            <Save style={{cursor: "pointer"}} onClick={ () => onSave(country.id) }></Save>
+                            <ArrowCounterclockwise style={{cursor: "pointer"}} onClick={ () => onReset(country.id) }>reset</ArrowCounterclockwise>
                         </React.Fragment>
                         :
                         <TrashFill onClick={() => onDelete(country.id)} className='icon-btn' style={{ color:'red' }} />
@@ -49,8 +46,8 @@ function Country(props) {
                             <Medal
                                 country={ props.country }
                                 medal={ medal }
-                                onIncrement={ props.onIncrement }
-                                onDecrement={ props.onDecrement } />
+                                onIncrement={ onIncrement }
+                                onDecrement={ onDecrement } />
                         </ListGroup.Item>
                     ) }
                 </ListGroup>

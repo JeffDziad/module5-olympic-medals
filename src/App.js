@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import Country from './components/Country';
 import NewCountry from './components/NewCountry';
 import Container from 'react-bootstrap/Container';
@@ -12,12 +12,8 @@ import axios from "axios";
 
 function App() {
     const endpoint = "https://jeffdziad-olympic-medals-api.azurewebsites.net/api/country"
-    const [countries, setCountries] = useState([
-        { id: 1, name: 'United States', gold: 2, silver: 2, bronze: 3 },
-        { id: 2, name: 'China', gold: 3, silver: 1, bronze: 0 },
-        { id: 3, name: 'Germany', gold: 0, silver: 2, bronze: 2 },
-    ]);
-    const [medals] = useState([
+    const [ countries, setCountries ] = useState([]);
+    const medals = useRef([
         { id: 1, name: 'gold' },
         { id: 2, name: 'silver' },
         { id: 3, name: 'bronze' },
@@ -53,7 +49,7 @@ function App() {
             setCountries(newCountries);
         }
         fetchCountries();
-    }, []);
+    }, [medals]);
 
     const handleAdd = async (name) => {
         const { data: post } = await axios.post(endpoint, { name: name });
@@ -68,7 +64,7 @@ function App() {
             newCountry[medal.name] = { page_value: count, saved_value: count };
         });
         setCountries(countries.concat(newCountry));
-        console.log('ADD');
+        createNotification("Added Successfully", "Successfully added '"+name+"' to the list!");
     }
     const handleDelete = async (countryId) => {
         const originalCountries = countries;
@@ -78,9 +74,9 @@ function App() {
         } catch (ex) {
             if (ex.response && ex.response.status === 404) {
                 // country already deleted
-                console.log("The record does not exist - it may have already been deleted");
+                createNotification("Delete Failed", "The record does not exist - it may have already been deleted.");
             } else {
-                alert('An error occurred while deleting');
+                createNotification("Delete Failed", "An error occurred while deleting");
                 setCountries(originalCountries);
             }
         }
@@ -99,18 +95,17 @@ function App() {
                 country[medal.name].saved_value = country[medal.name].page_value;
             }
         });
-        console.log(`json patch for id: ${countryId}: ${JSON.stringify(jsonPatch)}`);
-        // update state
         setCountries(mutableCountries);
 
         try {
             await axios.patch(`${endpoint}/${countryId}`, jsonPatch);
+            createNotification("Save Successful", "Changed saved to the server...");
         } catch (ex) {
             if (ex.response && ex.response.status === 404) {
                 // country already deleted
-                console.log("The record does not exist - it may have already been deleted");
+                createNotification("Save Failed", "The record does not exist - it may have already been deleted");
             } else {
-                alert('An error occurred while updating');
+                createNotification("Save Failed", "An error occurred while updating...");
                 setCountries(originalCountries);
             }
         }
@@ -160,7 +155,7 @@ function App() {
                             <Country
                                 className="content"
                                 country={ country }
-                                medals={ medals }
+                                medals={ medals.current }
                                 onDelete={ handleDelete }
                                 onSave={handleSave}
                                 onReset={handleReset}
